@@ -1,8 +1,14 @@
 package com.dontbelievethebyte.binaryclock
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import android.graphics.Typeface
+import android.os.Handler
 import android.view.{ViewGroup, Gravity}
 import android.widget.{ImageView, LinearLayout}
+import com.dontbelievethebyte.binaryclock.R
+import com.dontbelievethebyte.binaryclock.R.drawable
 import scala.language.postfixOps
 import org.scaloid.common._
 
@@ -41,8 +47,16 @@ class BinaryClock extends SActivity{
   lazy val h1Led1 : SImageView = new SImageView()
   lazy val h1Led2 : SImageView = new SImageView()
 
+  //Time placeholders
+  lazy val s0text : STextView = new STextView("S")
+  lazy val s1text : STextView = new STextView("S")
+  lazy val m0text : STextView = new STextView("M")
+  lazy val m1text : STextView = new STextView("M")
+  lazy val h0text : STextView = new STextView("H")
+  lazy val h1text : STextView = new STextView("H")
+
   //Drawables
-  lazy val ledOffDrawable = getResources.getDrawable(R.drawable.led_off)
+  lazy val ledOffDrawable = getResources.getDrawable(drawable.led_off)
   lazy val ledOnDrawable = getResources.getDrawable(R.drawable.led_on)
 
   //Layout params definitions
@@ -85,11 +99,11 @@ class BinaryClock extends SActivity{
         case t: STextView => styleTimePlaceHolder(t)
         case i: SImageView => styleLedDrawable(i)
       }
-      this += h0Led1
-      this += h0Led2
-      this += h0Led4
       this += h0Led8
-      STextView("H")
+      this += h0Led4
+      this += h0Led2
+      this += h0Led1
+      this += h0text
     } gravity ledColumnGravity layoutParams ledColumnLayoutParams
 
     val hours1 = new SVerticalLayout {
@@ -97,9 +111,9 @@ class BinaryClock extends SActivity{
         case t: STextView => styleTimePlaceHolder(t)
         case i: SImageView => styleLedDrawable(i)
       }
-      this += h1Led1
       this += h1Led2
-      STextView("H")
+      this += h1Led1
+      this += h1text
     } gravity ledColumnGravity layoutParams ledColumnLayoutParams
 
     val minutes0 = new SVerticalLayout {
@@ -107,11 +121,11 @@ class BinaryClock extends SActivity{
         case t: STextView => styleTimePlaceHolder(t)
         case i: SImageView => styleLedDrawable(i)
       }
-      this += m0Led1
-      this += m0Led2
-      this += m0Led4
       this += m0Led8
-      STextView("M")
+      this += m0Led4
+      this += m0Led2
+      this += m0Led1
+      this += m0text
     } gravity ledColumnGravity layoutParams ledColumnLayoutParams
 
     val minutes1 = new SVerticalLayout {
@@ -119,11 +133,11 @@ class BinaryClock extends SActivity{
         case t: STextView => styleTimePlaceHolder(t)
         case i: SImageView => styleLedDrawable(i)
       }
-      this += m1Led1
-      this += m1Led2
-      this += m1Led4
       this += m1Led8
-      STextView("M")
+      this += m1Led4
+      this += m1Led2
+      this += m1Led1
+      this += m1text
     } gravity ledColumnGravity layoutParams ledColumnLayoutParams
 
     val seconds0 = new SVerticalLayout {
@@ -131,11 +145,11 @@ class BinaryClock extends SActivity{
         case t: STextView => styleTimePlaceHolder(t)
         case i: SImageView => styleLedDrawable(i)
       }
-      this += s0Led1
-      this += s0Led2
-      this += s0Led4
       this += s0Led8
-      STextView("S")
+      this += s0Led4
+      this += s0Led2
+      this += s0Led1
+      this += s0text
     } gravity ledColumnGravity layoutParams ledColumnLayoutParams
 
     val seconds1 = new SVerticalLayout {
@@ -143,11 +157,11 @@ class BinaryClock extends SActivity{
         case t: STextView => styleTimePlaceHolder(t)
         case i: SImageView => styleLedDrawable(i)
       }
-      this += s1Led1
-      this += s1Led2
-      this += s1Led4
       this += s1Led8
-      STextView("S")
+      this += s1Led4
+      this += s1Led2
+      this += s1Led1
+      this += s1text
     } gravity ledColumnGravity layoutParams ledColumnLayoutParams
 
     val separatorLeft = new SVerticalLayout {
@@ -182,6 +196,29 @@ class BinaryClock extends SActivity{
      .layoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
   }
 
+  val handler = new Handler()
+
+  val runnable = new Runnable() {
+
+    def run() {
+      try{
+        showTime()
+        handler.postDelayed(this, 1000)
+      }
+      catch {
+        case e: Exception => handler.postDelayed(this, 1000)
+      }
+    }
+  }
+  
+  onResume {
+    handler.postDelayed(runnable, 1000)
+  }
+
+  onPause {
+    handler.removeCallbacks(runnable)
+  }
+
   def styleBinaryPlaceHolder (t: STextView): STextView = {
     t height 40.dip  typeface Typeface.MONOSPACE textSize 10.dip gravity Gravity.CENTER textColor getResources.getColor(R.color.label)
   }
@@ -192,5 +229,113 @@ class BinaryClock extends SActivity{
 
   def styleLedDrawable (i: SImageView): SImageView = {
     i backgroundColor android.R.color.transparent imageDrawable ledOffDrawable layoutParams squareElementLayoutParams scaleType ImageView.ScaleType.FIT_CENTER
+  }
+
+  val hoursFormat = new SimpleDateFormat("HH")
+  val minutesFormat = new SimpleDateFormat("mm")
+  val secondsFormat = new SimpleDateFormat("ss")
+
+  def showTime() = {
+    val time = Calendar.getInstance().getTime
+    setHours(hoursFormat.format(time))
+    setMinutes(minutesFormat.format(time))
+    setSeconds(secondsFormat.format(time))
+  }
+
+  def toInt(s: String):Int = {
+    try {
+      s.toInt
+    } catch {
+      case e:Exception => 0
+    }
+  }
+
+  def setSeconds(seconds: String): Unit = {
+    s0text text seconds.substring(seconds.length() - 1)
+    s1text text seconds.substring(0,1)
+    setLeds(List(s0Led1, s0Led2, s0Led4, s0Led8), seconds.substring(seconds.length() - 1).toInt)
+    setLeds(List(s1Led1, s1Led2, s1Led4, s1Led8), seconds.substring(0,1).toInt)
+  }
+
+  def setMinutes(minutes: String): Unit = {
+    m0text text minutes.substring(minutes.length() - 1)
+    m1text text minutes.substring(0,1)
+    setLeds(List(m0Led1, m0Led2, m0Led4, m0Led8), minutes.substring(minutes.length() - 1).toInt)
+    setLeds(List(m1Led1, m1Led2, m1Led4, m1Led8), minutes.substring(0, 1).toInt)
+  }
+
+  def setHours(hours: String): Unit = {
+    h0text text hours.substring(hours.length() - 1)
+    h1text text hours.substring(0,1)
+    setLeds(List(h0Led1, h0Led2), hours.substring(hours.length() - 1).toInt)
+    setLeds(List(h1Led1, h1Led2), hours.substring(0, 1).toInt)
+  }
+
+  def setLeds(leds : List[SImageView], value : Int ): Unit = {
+    leds match {
+      case List(_, _, _, _) => value match  {
+        case 0 =>
+          leds(0) imageDrawable ledOffDrawable
+          leds(1) imageDrawable ledOffDrawable
+          leds(2) imageDrawable ledOffDrawable
+          leds(3) imageDrawable ledOffDrawable
+        case 1 =>
+          leds(0) imageDrawable ledOnDrawable
+          leds(1) imageDrawable ledOffDrawable
+          leds(2) imageDrawable ledOffDrawable
+          leds(3) imageDrawable ledOffDrawable
+        case 2 =>
+          leds(0) imageDrawable ledOffDrawable
+          leds(1) imageDrawable ledOnDrawable
+          leds(3) imageDrawable ledOffDrawable
+          leds(3) imageDrawable ledOffDrawable
+        case 3 =>
+          leds(0) imageDrawable ledOnDrawable
+          leds(1) imageDrawable ledOnDrawable
+          leds(2) imageDrawable ledOffDrawable
+          leds(3) imageDrawable ledOffDrawable
+        case 4 =>
+          leds(0) imageDrawable ledOffDrawable
+          leds(1) imageDrawable ledOffDrawable
+          leds(2) imageDrawable ledOnDrawable
+          leds(3) imageDrawable ledOffDrawable
+        case 5 =>
+          leds(0) imageDrawable ledOnDrawable
+          leds(1) imageDrawable ledOffDrawable
+          leds(2) imageDrawable ledOnDrawable
+          leds(3) imageDrawable ledOffDrawable
+        case 6 =>
+          leds(0) imageDrawable ledOffDrawable
+          leds(1) imageDrawable ledOnDrawable
+          leds(2) imageDrawable ledOnDrawable
+          leds(3) imageDrawable ledOffDrawable
+        case 7 =>
+          leds(0) imageDrawable ledOnDrawable
+          leds(1) imageDrawable ledOnDrawable
+          leds(2) imageDrawable ledOnDrawable
+          leds(3) imageDrawable ledOffDrawable
+        case 8 =>
+          leds(0) imageDrawable ledOffDrawable
+          leds(1) imageDrawable ledOffDrawable
+          leds(2) imageDrawable ledOffDrawable
+          leds(3) imageDrawable ledOnDrawable
+        case 9 =>
+          leds(0) imageDrawable ledOnDrawable
+          leds(1) imageDrawable ledOffDrawable
+          leds(2) imageDrawable ledOffDrawable
+          leds(3) imageDrawable ledOnDrawable
+      }
+      case List(_, _) => value match {
+        case 0 =>
+          leds(0) imageDrawable ledOffDrawable
+          leds(1) imageDrawable ledOffDrawable
+        case 1 =>
+          leds(0) imageDrawable ledOnDrawable
+          leds(1) imageDrawable ledOffDrawable
+        case 2 =>
+          leds(0) imageDrawable ledOffDrawable
+          leds(1) imageDrawable ledOnDrawable
+      }
+    }
   }
 }

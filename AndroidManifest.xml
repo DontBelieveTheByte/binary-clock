@@ -4,7 +4,7 @@
       android:versionCode="1"
       android:versionName="1.0">
     <application android:label="Binary Clock" >
-        <activity android:name="BinaryClock"
+        <activity android:name="com.dontbelievethebyte.binaryclock.BinaryClock"
                   android:label="Binary Clock">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
